@@ -31,14 +31,22 @@ public class FactureRestController {
 
     // http://localhost:8089/SpringMVC/facture/retrieve-facture/8
     @GetMapping("/retrieve-facture/{facture-id}")
-    @ResponseBody
     public Facture retrieveFacture(@PathVariable("facture-id") Long factureId) {
         return factureService.retrieveFacture(factureId);
+    }
+    
+    @GetMapping("/retrieve-facture/{montant}")
+    public List <Facture> retrieveFacture(@PathVariable("montant") float montant) {
+        return  factureService.searchByMontantSup(montant);
+    }
+    
+    @PostMapping("/add-new-facture")
+    public Facture addNewFacture(@RequestBody Facture f) {
+        return factureService.addFacture(f);
     }
 
     // http://localhost:8089/SpringMVC/facture/add-facture/{fournisseur-id}
     @PostMapping("/add-facture")
-    @ResponseBody
     public Facture addFacture(@RequestBody Facture f) {
         Facture facture = factureService.addFacture(f);
         return facture;

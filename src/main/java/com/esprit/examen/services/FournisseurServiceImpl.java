@@ -31,16 +31,20 @@ public class FournisseurServiceImpl implements IFournisseurService {
 
 	@Override
 	public List<Fournisseur> retrieveAllFournisseurs() {
+		log.info(" je commence l'execution de la méthode retrieveAllFournisseurs");
 		List<Fournisseur> fournisseurs = (List<Fournisseur>) fournisseurRepository.findAll();
 		for (Fournisseur fournisseur : fournisseurs) {
-			log.info(" fournisseur : " + fournisseur);
+		log.info(" fournisseur : " + fournisseur);
+
 		}
+		log.info(" j'ai finalisé l'execution de la méthode retrieveAllFournisseurs");
 		return fournisseurs;
 	}
 
 
 	public Fournisseur addFournisseur(Fournisseur f /*Master*/) {
 		DetailFournisseur df= new DetailFournisseur();//Slave
+		log.debug(" je viens d'ajouter la date à la variable df");
 		df.setDateDebutCollaboration(new Date()); //util
 		//On affecte le "Slave" au "Master"
 		f.setDetailFournisseur(df);	

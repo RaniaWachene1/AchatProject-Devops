@@ -14,6 +14,8 @@ import com.esprit.examen.entities.Fournisseur;
 @Repository
 public interface FactureRepository extends JpaRepository<Facture, Long> {
 
+	List<Facture> findByMontantRemiseGreaterThan(float montant);
+	
 	
 	@Query("SELECT f FROM Facture f where f.fournisseur=:fournisseur and f.archivee=false")
 	public List<Facture> getFactureByFournisseur(@Param("fournisseur") Fournisseur fournisseur);

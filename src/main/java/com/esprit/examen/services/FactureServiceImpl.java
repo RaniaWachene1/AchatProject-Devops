@@ -45,7 +45,6 @@ public class FactureServiceImpl implements IFactureService {
 		return factures;
 	}
 
-	
 	public Facture addFacture(Facture f) {
 		return factureRepository.save(f);
 	}
@@ -118,6 +117,12 @@ public class FactureServiceImpl implements IFactureService {
 		float pourcentage=(totalRecouvrementEntreDeuxDates/totalFacturesEntreDeuxDates)*100;
 		return pourcentage;
 	}
+
+	@Override
+	public List<Facture> searchByMontantSup(float montant) {
+		return factureRepository.findByMontantRemiseGreaterThan(montant);
+	}
+	
 	
 
 }
