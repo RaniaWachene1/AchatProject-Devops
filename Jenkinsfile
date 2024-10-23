@@ -69,16 +69,7 @@ pipeline {
             }
         }
 
-        stage('Clean Up Docker Image Locally') {
-            steps {
-                script {
-                    def dockerTag = "${BUILD_NUMBER}"
-                    def dockerImage = "${IMAGE_REPO}:${dockerTag}"
-                    sh "docker rmi ${dockerImage}"
-                    echo "Docker image ${dockerImage} removed from local environment."
-                }
-            }
-        }
+
 
         stage('Clean Old Docker Images from Registry') {
             steps {
