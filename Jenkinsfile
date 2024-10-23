@@ -1,39 +1,57 @@
 pipeline {
     agent any
-    stages {
-        stage("Git Checkout"){
-            steps {
-            git branch: 'main',
-             credentialsId: 'git-cred',
-              url: 'https://github.com/RaniaWachene1/AchatProject-Devops.git'
-                echo 'checkout stage'
-            }
-        }
 
-        stage ('maven clean') {
-      steps {
-        sh 'mvn clean'
-        echo 'Build stage done'
-      }
+    environment {
+        DOCKER_CREDENTIALS_ID = 'dockerHub'
+        GIT_CREDENTIALS_ID = 'git-cred'
+        DOCKER_IMAGE = 'raniawachene/tpachat:latest'
     }
 
-        stage("compile Project"){
-        steps {
-            sh 'mvn compile'
-            echo 'compile stage done'
-            }
-        }
-        stage("unit tests"){
+    stages {
+        stage("Git Checkout") {
             steps {
-                 sh 'mvn test'
-                  echo 'unit tests stage done'
+                git branch: 'main', credentialsId: "${GIT_CREDENTIALS_ID}", url: 'https://github.com/RaniaWachene1/AchatProject-Devops.git'
+                echo 'Checkout completed successfully.'
             }
         }
 
-        stage('maven package') {
-             steps {
-               sh 'mvn package'
-          }
-   }
-}
+        stage('Maven Clean') {
+            steps {
+                sh 'mvn clean'
+                echo 'Clean stage completed successfully.'
+            }
+        }
+
+        stage("Compile Project") {
+            steps {
+                sh 'mvn compile'
+                echo 'Compilation completed successfully.'
+            }
+        }
+
+        stage("Run Unit Tests") {
+            steps {
+                sh 'mvn test'
+                echo 'Unit tests completed successfully.'
+            }
+        }
+
+        stage('Maven Package') {
+            steps {
+                sh 'mvn package'
+                echo 'Package stage completed successfully.'
+            }
+        }
+
+        stage('Build & Tag Docker Image') {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: "${DOCKER_CREDENTIALS_ID}") {
+                        sh "docker build -t ${DOCKER_IMAGE} ."
+                        echo "Docker image ${DOCKER_IMAGE} built and tagged successfully."
+                    }
+                }
+            }
+        }
+    }
 }
