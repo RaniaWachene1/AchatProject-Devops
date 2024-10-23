@@ -4,7 +4,7 @@ pipeline {
     environment {
         DOCKER_CREDENTIALS_ID = 'dockerHub'
         GIT_CREDENTIALS_ID = 'git-cred'
-        DOCKER_IMAGE = 'raniawachene/tpachat:latest'
+        IMAGE_REPO = 'raniawachene/tpachat'
     }
 
     stages {
@@ -46,9 +46,11 @@ pipeline {
         stage('Build & Tag Docker Image') {
             steps {
                 script {
+                    def dockerTag = "${BUILD_NUMBER}"
+                    def dockerImage = "${IMAGE_REPO}:${dockerTag}"
                     withDockerRegistry(credentialsId: "${DOCKER_CREDENTIALS_ID}") {
-                        sh "docker build -t ${DOCKER_IMAGE} ."
-                        echo "Docker image ${DOCKER_IMAGE} built and tagged successfully."
+                        sh "docker build -t ${dockerImage} ."
+                        echo "Docker image ${dockerImage} built and tagged successfully."
                     }
                 }
             }
@@ -57,19 +59,36 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 script {
+                    def dockerTag = "${BUILD_NUMBER}"
+                    def dockerImage = "${IMAGE_REPO}:${dockerTag}"
                     withDockerRegistry(credentialsId: "${DOCKER_CREDENTIALS_ID}") {
-                        sh "docker push ${DOCKER_IMAGE}"
-                        echo "Docker image ${DOCKER_IMAGE} pushed to Docker Hub successfully."
+                        sh "docker push ${dockerImage}"
+                        echo "Docker image ${dockerImage} pushed to Docker Hub successfully."
                     }
                 }
             }
         }
 
-        stage('Clean Up Docker Image') {
+        stage('Clean Up Docker Image Locally') {
             steps {
                 script {
-                    sh "docker rmi ${DOCKER_IMAGE}"
-                    echo "Docker image ${DOCKER_IMAGE} removed from local environment."
+                    def dockerTag = "${BUILD_NUMBER}"
+                    def dockerImage = "${IMAGE_REPO}:${dockerTag}"
+                    sh "docker rmi ${dockerImage}"
+                    echo "Docker image ${dockerImage} removed from local environment."
+                }
+            }
+        }
+
+        stage('Clean Old Docker Images from Registry') {
+            steps {
+                script {
+                    def oldTag = "${BUILD_NUMBER - 1}"
+                    def oldImage = "${IMAGE_REPO}:${oldTag}"
+                    withDockerRegistry(credentialsId: "${DOCKER_CREDENTIALS_ID}") {
+                        // Try removing the previous Docker image if it exists
+                        sh "docker rmi ${oldImage} || echo 'Previous image ${oldImage} not found.'"
+                    }
                 }
             }
         }
