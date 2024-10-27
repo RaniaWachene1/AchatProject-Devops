@@ -38,7 +38,7 @@ pipeline {
          stage('SonarQube Analysis') {
                     steps {
                         withSonarQubeEnv('SonarQube-Server') { // Use the name you gave in Jenkins configuration
-                            sh 'mvn sonar:sonar \
+                            sh '$SCANNER_HOME/bin/sonar-scanner \
                                 -Dsonar.projectKey=tpAchat \
                                 -Dsonar.host.url=http://193.95.57.13:9000 \
                                 -Dsonar.login=sonarqube-cred'
