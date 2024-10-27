@@ -6,6 +6,9 @@ pipeline {
         GIT_CREDENTIALS_ID = 'git-cred'
         IMAGE_REPO = 'raniawachene/tpachat'
     }
+    tools {
+        sonarQube 'SonarScanner'  // The name you configured for SonarScanner
+    }
 
     stages {
         stage("Git Checkout") {
@@ -38,10 +41,10 @@ pipeline {
          stage('SonarQube Analysis') {
                     steps {
                         withSonarQubeEnv('SonarQube-Server') { // Use the name you gave in Jenkins configuration
-                            sh '$SCANNER_HOME/bin/sonar-scanner \
+                            sh 'mvn sonar:sonar \
                                 -Dsonar.projectKey=tpAchat \
-                                -Dsonar.host.url=http://193.95.57.13:9000 \
-                                -Dsonar.login=sonarqube-cred'
+                                -Dsonar.host.url=http://193.95.57.13:9000 
+                               '
                         }
                     }
                 }
