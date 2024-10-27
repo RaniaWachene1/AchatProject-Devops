@@ -6,9 +6,7 @@ pipeline {
         GIT_CREDENTIALS_ID = 'git-cred'
         IMAGE_REPO = 'raniawachene/tpachat'
     }
-    tools {
-        sonarQube 'SonarScanner'  // The name you configured for SonarScanner
-    }
+
 
     stages {
         stage("Git Checkout") {
@@ -45,7 +43,7 @@ pipeline {
                     sh '''mvn sonar:sonar \
                         -Dsonar.projectKey=tpAchat \
                         -Dsonar.host.url=http://193.95.57.13:9000 \
-                        -Dsonar.login=squ_5755e6fa9b63706cb6273c66f00bc001610c15e8'''
+                        -Dsonar.login=sonarqube-cred'''
                 }
             }
         }
