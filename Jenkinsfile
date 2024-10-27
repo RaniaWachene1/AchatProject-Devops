@@ -37,17 +37,18 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('SonarQube-Server') { // Use the name you gave in Jenkins configuration
-                    sh '''mvn sonar:sonar \
-                        -Dsonar.projectKey=tpAchat \
-                        -Dsonar.host.url=http://193.95.57.13:9000 \
-                        -Dsonar.login=sonarqube-cred'''
-                }
-            }
-        }
-
+   stage('SonarQube Analysis') {
+               steps {
+                   withSonarQubeEnv('SonarQube-Server') {
+                       withCredentials([string(credentialsId: 'sonarqube-cred', variable: 'SONAR_TOKEN')]) {
+                           sh '''mvn sonar:sonar \
+                               -Dsonar.projectKey=tpAchat \
+                               -Dsonar.host.url=http://193.95.57.13:9000 \
+                               -Dsonar.login=$SONAR_TOKEN'''
+                       }
+                   }
+               }
+           }
         stage('Maven Package') {
             steps {
                 sh 'mvn package'
