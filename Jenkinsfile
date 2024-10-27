@@ -35,6 +35,16 @@ pipeline {
                 echo 'Unit tests completed successfully.'
             }
         }
+         stage('SonarQube Analysis') {
+                    steps {
+                        withSonarQubeEnv('SonarQube-Server') { // Use the name you gave in Jenkins configuration
+                            sh 'mvn sonar:sonar \
+                                -Dsonar.projectKey=tpAchat \
+                                -Dsonar.host.url=http://http://193.95.57.13:9000 \
+                                -Dsonar.login=sonarqube-cred'
+                        }
+                    }
+                }
 
         stage('Maven Package') {
             steps {
