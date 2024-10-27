@@ -38,16 +38,17 @@ pipeline {
                 echo 'Unit tests completed successfully.'
             }
         }
-         stage('SonarQube Analysis') {
-                    steps {
-                        withSonarQubeEnv('SonarQube-Server') { // Use the name you gave in Jenkins configuration
-                            sh 'mvn sonar:sonar \
-                                -Dsonar.projectKey=tpAchat \
-                                -Dsonar.host.url=http://193.95.57.13:9000 
-                               '
-                        }
-                    }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube-Server') { // Use the name you gave in Jenkins configuration
+                    sh '''mvn sonar:sonar \
+                        -Dsonar.projectKey=tpAchat \
+                        -Dsonar.host.url=http://193.95.57.13:9000 \
+                        -Dsonar.login=squ_5755e6fa9b63706cb6273c66f00bc001610c15e8'''
                 }
+            }
+        }
 
         stage('Maven Package') {
             steps {
@@ -81,8 +82,6 @@ pipeline {
                 }
             }
         }
-
-
 
         stage('Clean Old Docker Images from Registry') {
             steps {
