@@ -6,6 +6,12 @@ pipeline {
         DOCKER_CREDENTIALS_ID = 'dockerHub'
         GIT_CREDENTIALS_ID = 'git-cred'
         IMAGE_REPO = 'raniawachene/tpachat'
+        SONAR_HOST_URL = 'http://193.95.57.13:9000'
+        NEXUS_URL = 'http://193.95.57.13:8081/repository/maven-releases/'
+    }
+
+    parameters {
+        string(name: 'newVersion', defaultValue: '', description: 'The new version to be deployed')
     }
 
     stages {
@@ -13,42 +19,39 @@ pipeline {
         // Git Checkout
         stage("Git Checkout") {
             steps {
-                git branch: 'main', credentialsId: "${GIT_CREDENTIALS_ID}", url: 'https://github.com/RaniaWachene1/AchatProject-Devops.git'
-                echo 'Checkout completed successfully.'
+                script {
+                    git branch: 'main', credentialsId: "${GIT_CREDENTIALS_ID}", url: 'https://github.com/RaniaWachene1/AchatProject-Devops.git'
+                    echo 'Git checkout completed successfully.'
+                }
             }
         }
 
         // Maven Clean
         stage('Maven Clean') {
             steps {
-                sh 'mvn clean'
-                echo 'Clean stage completed successfully.'
+                script {
+                    sh 'mvn clean'
+                    echo 'Maven clean completed successfully.'
+                }
             }
         }
 
         // Compile Project
         stage("Compile Project") {
             steps {
-                sh 'mvn compile'
-                echo 'Compilation completed successfully.'
+                script {
+                    sh 'mvn compile'
+                    echo 'Compilation completed successfully.'
+                }
             }
         }
 
         // Run Unit Tests
         stage("Run Unit Tests") {
             steps {
-                sh 'mvn test'
-                echo 'Unit tests completed successfully.'
-            }
-        }
-
-        // Update Version
-        stage('Update Version') {
-            steps {
                 script {
-                    def version = "1.0.0.${env.BUILD_NUMBER}"
-                    sh "mvn versions:set -DnewVersion=${version} -DgenerateBackupPoms=false"
-                    echo "Version updated to ${version}"
+                    sh 'mvn test'
+                    echo 'Unit tests completed successfully.'
                 }
             }
         }
@@ -61,9 +64,10 @@ pipeline {
                         sh '''
                             mvn sonar:sonar \
                             -Dsonar.projectKey=tpAchat \
-                            -Dsonar.host.url=http://193.95.57.13:9000 \
+                            -Dsonar.host.url=${SONAR_HOST_URL} \
                             -Dsonar.login=$SONAR_TOKEN
                         '''
+                        echo 'SonarQube analysis completed successfully.'
                     }
                 }
             }
@@ -72,8 +76,10 @@ pipeline {
         // Maven Package
         stage('Maven Package') {
             steps {
-                sh 'mvn package'
-                echo 'Package stage completed successfully.'
+                script {
+                    sh 'mvn package'
+                    echo 'Maven package completed successfully.'
+                }
             }
         }
 
@@ -81,9 +87,12 @@ pipeline {
         stage("Nexus Deploy") {
             steps {
                 script {
-                    def version = "1.0.0.${env.BUILD_NUMBER}"
-                    sh "mvn deploy:deploy-file -DgroupId=com.esprit.examen -DartifactId=tpAchatProject -Dversion=${version} -DgeneratePom=true -Dpackaging=jar -DrepositoryId=deploymentRepo -Durl=http://193.95.57.13:8081/repository/maven-releases/ -Dfile=target/tpAchatProject-${version}.jar"
-                    echo "Nexus deployment successful for version ${version}."
+                    if (params.newVersion?.trim()) {
+                        sh "mvn deploy:deploy-file -DgroupId=com.esprit.examen -DartifactId=tpAchatProject -Dversion=${params.newVersion} -DgeneratePom=true -Dpackaging=jar -DrepositoryId=deploymentRepo -Durl=${NEXUS_URL} -Dfile=target/tpAchatProject-${params.newVersion}.jar"
+                        echo "Nexus deployment successful for version ${params.newVersion}."
+                    } else {
+                        error("New version is not set. Cannot deploy to Nexus.")
+                    }
                 }
             }
         }
@@ -120,7 +129,7 @@ pipeline {
         stage('Clean Old Docker Images from Registry') {
             steps {
                 script {
-                    def oldTag = "${BUILD_NUMBER - 1}"
+                    def oldTag = "${BUILD_NUMBER.toInteger() - 1}"
                     def oldImage = "${IMAGE_REPO}:${oldTag}"
                     withDockerRegistry(credentialsId: "${DOCKER_CREDENTIALS_ID}") {
                         sh "docker rmi ${oldImage} || echo 'Previous image ${oldImage} not found.'"
