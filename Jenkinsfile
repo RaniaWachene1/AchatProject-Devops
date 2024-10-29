@@ -9,12 +9,9 @@ pipeline {
         NEXUS_CREDENTIALS_ID = 'nexus-cred'
     }
 
-    parameters {
-        string(name: 'newBuildNumber', defaultValue: "${BUILD_NUMBER}", description: 'The new build number to be deployed')
-    }
-
     stages {
 
+        // Git Checkout
         stage("Git Checkout") {
             steps {
                 git branch: 'main', credentialsId: "${GIT_CREDENTIALS_ID}", url: 'https://github.com/RaniaWachene1/AchatProject-Devops.git'
@@ -22,14 +19,13 @@ pipeline {
             }
         }
 
-        // Update the version in the pom.xml using build number
+        // Update the version in the pom.xml using the build number automatically
         stage('Update Version') {
             steps {
                 script {
-                    def newBuildNumber = "${params.newBuildNumber}"
-                    def newVersion = "1.0.${newBuildNumber}"
+                    def newVersion = "1.0.${env.BUILD_NUMBER}"
 
-                    // Update the pom.xml version dynamically
+                    // Update the pom.xml version dynamically using the build number
                     sh """
                         mvn versions:set -DnewVersion=${newVersion} -DgenerateBackupPoms=false
                     """
@@ -91,8 +87,7 @@ pipeline {
         stage('Deploy to Nexus') {
             steps {
                 script {
-                    def newBuildNumber = "${params.newBuildNumber}"
-                    def newVersion = "1.0.${newBuildNumber}"
+                    def newVersion = "1.0.${env.BUILD_NUMBER}"
 
                     withCredentials([usernamePassword(credentialsId: "${NEXUS_CREDENTIALS_ID}", passwordVariable: 'NEXUS_PASS', usernameVariable: 'NEXUS_USER')]) {
                         sh """
@@ -116,7 +111,7 @@ pipeline {
         stage('Build & Tag Docker Image') {
             steps {
                 script {
-                    def dockerTag = "${params.newBuildNumber}"
+                    def dockerTag = "${env.BUILD_NUMBER}"
                     def dockerImage = "${IMAGE_REPO}:${dockerTag}"
                     withDockerRegistry(credentialsId: "${DOCKER_CREDENTIALS_ID}") {
                         sh "docker build -t ${dockerImage} ."
@@ -130,7 +125,7 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 script {
-                    def dockerTag = "${params.newBuildNumber}"
+                    def dockerTag = "${env.BUILD_NUMBER}"
                     def dockerImage = "${IMAGE_REPO}:${dockerTag}"
                     withDockerRegistry(credentialsId: "${DOCKER_CREDENTIALS_ID}") {
                         sh "docker push ${dockerImage}"
@@ -144,7 +139,7 @@ pipeline {
         stage('Clean Old Docker Images from Registry') {
             steps {
                 script {
-                    def oldTag = "${params.newBuildNumber.toInteger() - 1}"
+                    def oldTag = "${env.BUILD_NUMBER.toInteger() - 1}"
                     def oldImage = "${IMAGE_REPO}:${oldTag}"
                     withDockerRegistry(credentialsId: "${DOCKER_CREDENTIALS_ID}") {
                         sh "docker rmi ${oldImage} || echo 'Previous image ${oldImage} not found.'"
