@@ -105,19 +105,16 @@ pipeline {
             }
         }
 
-        // Build and tag Docker image
 // Build and tag Docker image
 stage('Build & Tag Docker Image') {
     steps {
         script {
             def dockerTag = "${env.BUILD_NUMBER}"
             def dockerImage = "${IMAGE_REPO}:${dockerTag}"
-            def jarFile = "target/tpAchatProject-${env.BUILD_NUMBER}.jar" 
 
-            // Build Docker image using JAR_FILE argument
             withDockerRegistry(credentialsId: "${DOCKER_CREDENTIALS_ID}") {
                 sh """
-                    docker build --build-arg JAR_FILE=${jarFile} -t ${dockerImage} .
+                    docker build -t ${dockerImage} .
                 """
                 echo "Docker image ${dockerImage} built and tagged successfully."
             }
