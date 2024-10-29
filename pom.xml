@@ -89,7 +89,7 @@
     </build>
     <distributionManagement>
         <repository>
-            <id>nexus-repo</id>
+            <id>deploymentRepo</id>
             <url>http://193.95.57.13:8081/repository/maven-public/</url>
             <releases>
                 <enabled>true</enabled>

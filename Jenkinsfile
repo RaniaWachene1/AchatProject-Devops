@@ -23,13 +23,8 @@ pipeline {
         stage('Update Version') {
             steps {
                 script {
-                    def newVersion = "1.0.${env.BUILD_NUMBER}"
-
-                    // Update the pom.xml version dynamically using the build number
-                    sh """
-                        mvn versions:set -DnewVersion=${newVersion} -DgenerateBackupPoms=false
-                    """
-                    echo "Updated version to ${newVersion}."
+            def version = "1.0.${env.BUILD_NUMBER}"
+              sh "mvn versions:set -DnewVersion=${version} -DgenerateBackupPoms=false"
                 }
             }
         }
