@@ -1,11 +1,6 @@
 pipeline {
     agent any
 
-    // Build parameters
-    parameters {
-        string(name: 'newVersion', defaultValue: '1.0.0', description: 'Version for Nexus deployment')
-    }
-
     // Environment variables
     environment {
         DOCKER_CREDENTIALS_ID = 'dockerHub'
@@ -47,6 +42,17 @@ pipeline {
             }
         }
 
+        // Update Version
+        stage('Update Version') {
+            steps {
+                script {
+                    def version = "1.0.0.${env.BUILD_NUMBER}"
+                    sh "mvn versions:set -DnewVersion=${version} -DgenerateBackupPoms=false"
+                    echo "Version updated to ${version}"
+                }
+            }
+        }
+
         // SonarQube Analysis
         stage('SonarQube Analysis') {
             steps {
@@ -75,12 +81,9 @@ pipeline {
         stage("Nexus Deploy") {
             steps {
                 script {
-                    if (params.newVersion) {
-                        sh "mvn deploy:deploy-file -DgroupId=com.esprit.examen -DartifactId=tpAchatProject -Dversion=${params.newVersion} -DgeneratePom=true -Dpackaging=jar -DrepositoryId=deploymentRepo -Durl=http://193.95.57.13:8081/repository/maven-releases/ -Dfile=target/tpAchatProject-${params.newVersion}.jar"
-                        echo "Nexus deployment successful for version ${params.newVersion}."
-                    } else {
-                        error("New version is not set. Cannot deploy to Nexus.")
-                    }
+                    def version = "1.0.0.${env.BUILD_NUMBER}"
+                    sh "mvn deploy:deploy-file -DgroupId=com.esprit.examen -DartifactId=tpAchatProject -Dversion=${version} -DgeneratePom=true -Dpackaging=jar -DrepositoryId=deploymentRepo -Durl=http://193.95.57.13:8081/repository/maven-releases/ -Dfile=target/tpAchatProject-${version}.jar"
+                    echo "Nexus deployment successful for version ${version}."
                 }
             }
         }
