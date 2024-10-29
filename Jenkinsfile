@@ -55,6 +55,17 @@ pipeline {
                 echo 'Package stage completed successfully.'
             }
         }
+stage("Nexus Deploy") {
+    steps {
+        script {
+            if (newVersion) {
+                sh "mvn deploy:deploy-file -DgroupId=com.esprit.examen -DartifactId=tpAchatProject -Dversion=${newVersion} -DgeneratePom=true -Dpackaging=jar -DrepositoryId=deploymentRepo -Durl=http://193.95.57.13:8081/repository/maven-releases/ -Dfile=target/tpAchatProject-${newVersion}.jar"
+            } else {
+                error("New version is not set. Cannot deploy to Nexus.")
+            }
+        }
+    }
+}
 
         stage('Build & Tag Docker Image') {
             steps {
