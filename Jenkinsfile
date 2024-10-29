@@ -23,8 +23,9 @@ pipeline {
         stage('Update Version') {
             steps {
                 script {
-            def version = "1.0.${env.BUILD_NUMBER}"
-              sh "mvn versions:set -DnewVersion=${version} -DgenerateBackupPoms=false"
+                    def version = "1.0.${env.BUILD_NUMBER}"
+                    sh "mvn versions:set -DnewVersion=${version} -DgenerateBackupPoms=false"
+                    echo "Updated version in pom.xml to ${version}."
                 }
             }
         }
@@ -92,9 +93,11 @@ pipeline {
                             -Dversion=${newVersion} \
                             -Dpackaging=jar \
                             -Dfile=target/tpAchatProject-${newVersion}.jar \
-                            -DrepositoryId=nexus-repo \
+                            -DrepositoryId=deploymentRepo \
                             -Durl=${NEXUS_URL} \
-                            -DgeneratePom=true
+                            -DgeneratePom=true \
+                            -Drepository.username=${NEXUS_USER} \
+                            -Drepository.password=${NEXUS_PASS}
                         """
                         echo "Deployed version ${newVersion} to Nexus."
                     }
