@@ -1,59 +1,64 @@
 pipeline {
     agent any
 
-    // Environment variables
     environment {
         DOCKER_CREDENTIALS_ID = 'dockerHub'
         GIT_CREDENTIALS_ID = 'git-cred'
         IMAGE_REPO = 'raniawachene/tpachat'
-        SONAR_HOST_URL = 'http://193.95.57.13:9000'
         NEXUS_URL = 'http://193.95.57.13:8081/repository/maven-releases/'
+        NEXUS_CREDENTIALS_ID = 'nexus-cred'
     }
 
-    // Parameters to allow versioning
     parameters {
-        string(name: 'newVersion', defaultValue: "${BUILD_NUMBER}", description: 'The new version to be deployed')
+        string(name: 'newBuildNumber', defaultValue: "${BUILD_NUMBER}", description: 'The new build number to be deployed')
     }
 
     stages {
 
-        // Git Checkout
         stage("Git Checkout") {
             steps {
+                git branch: 'main', credentialsId: "${GIT_CREDENTIALS_ID}", url: 'https://github.com/RaniaWachene1/AchatProject-Devops.git'
+                echo 'Checkout completed successfully.'
+            }
+        }
+
+        // Update the version in the pom.xml using build number
+        stage('Update Version') {
+            steps {
                 script {
-                    git branch: 'main', credentialsId: "${GIT_CREDENTIALS_ID}", url: 'https://github.com/RaniaWachene1/AchatProject-Devops.git'
-                    echo 'Git checkout completed successfully.'
+                    def newBuildNumber = "${params.newBuildNumber}"
+                    def newVersion = "1.0.${newBuildNumber}"
+
+                    // Update the pom.xml version dynamically
+                    sh """
+                        mvn versions:set -DnewVersion=${newVersion} -DgenerateBackupPoms=false
+                    """
+                    echo "Updated version to ${newVersion}."
                 }
             }
         }
 
-        // Maven Clean
+        // Clean the project
         stage('Maven Clean') {
             steps {
-                script {
-                    sh 'mvn clean'
-                    echo 'Maven clean completed successfully.'
-                }
+                sh 'mvn clean'
+                echo 'Clean stage completed successfully.'
             }
         }
 
-        // Compile Project
+        // Compile the project
         stage("Compile Project") {
             steps {
-                script {
-                    sh 'mvn compile'
-                    echo 'Compilation completed successfully.'
-                }
+                sh 'mvn compile'
+                echo 'Compilation completed successfully.'
             }
         }
 
-        // Run Unit Tests
+        // Run unit tests
         stage("Run Unit Tests") {
             steps {
-                script {
-                    sh 'mvn test'
-                    echo 'Unit tests completed successfully.'
-                }
+                sh 'mvn test'
+                echo 'Unit tests completed successfully.'
             }
         }
 
@@ -65,7 +70,7 @@ pipeline {
                         sh '''
                             mvn sonar:sonar \
                             -Dsonar.projectKey=tpAchat \
-                            -Dsonar.host.url=${SONAR_HOST_URL} \
+                            -Dsonar.host.url=http://193.95.57.13:9000 \
                             -Dsonar.login=$SONAR_TOKEN
                         '''
                         echo 'SonarQube analysis completed successfully.'
@@ -74,42 +79,44 @@ pipeline {
             }
         }
 
-        // Maven Package
+        // Package the application
         stage('Maven Package') {
             steps {
-                script {
-                    sh 'mvn package'
-                    echo 'Maven package completed successfully.'
-                }
+                sh 'mvn package'
+                echo 'Package stage completed successfully.'
             }
         }
 
-        // Nexus Deploy
-        stage("Nexus Deploy") {
+        // Deploy to Nexus Repository
+        stage('Deploy to Nexus') {
             steps {
                 script {
-                    try {
-                        def version = params.newVersion?.trim() ? params.newVersion : BUILD_NUMBER
-                        if (version) {
-                            sh "mvn deploy:deploy-file -DgroupId=com.esprit.examen -DartifactId=tpAchatProject -Dversion=${version} -DgeneratePom=true -Dpackaging=jar -DrepositoryId=deploymentRepo -Durl=${NEXUS_URL} -Dfile=target/tpAchatProject-${version}.jar"
-                            echo "Nexus deployment successful for version ${version}."
-                        } else {
-                            error("New version is not set. Cannot deploy to Nexus.")
-                        }
-                    } catch (e) {
-                        echo "Nexus deployment failed: ${e.getMessage()}"
-                        currentBuild.result = 'FAILURE'
-                        error("Nexus deploy failed")
+                    def newBuildNumber = "${params.newBuildNumber}"
+                    def newVersion = "1.0.${newBuildNumber}"
+
+                    withCredentials([usernamePassword(credentialsId: "${NEXUS_CREDENTIALS_ID}", passwordVariable: 'NEXUS_PASS', usernameVariable: 'NEXUS_USER')]) {
+                        sh """
+                            mvn deploy:deploy-file \
+                            -DgroupId=com.esprit.examen \
+                            -DartifactId=tpAchatProject \
+                            -Dversion=${newVersion} \
+                            -Dpackaging=jar \
+                            -Dfile=target/tpAchatProject-${newVersion}.jar \
+                            -DrepositoryId=nexus-repo \
+                            -Durl=${NEXUS_URL} \
+                            -DgeneratePom=true
+                        """
+                        echo "Deployed version ${newVersion} to Nexus."
                     }
                 }
             }
         }
 
-        // Build & Tag Docker Image
+        // Build and tag Docker image
         stage('Build & Tag Docker Image') {
             steps {
                 script {
-                    def dockerTag = "${BUILD_NUMBER}"
+                    def dockerTag = "${params.newBuildNumber}"
                     def dockerImage = "${IMAGE_REPO}:${dockerTag}"
                     withDockerRegistry(credentialsId: "${DOCKER_CREDENTIALS_ID}") {
                         sh "docker build -t ${dockerImage} ."
@@ -119,11 +126,11 @@ pipeline {
             }
         }
 
-        // Push Docker Image to Registry
+        // Push Docker image to Docker Hub
         stage('Push Docker Image') {
             steps {
                 script {
-                    def dockerTag = "${BUILD_NUMBER}"
+                    def dockerTag = "${params.newBuildNumber}"
                     def dockerImage = "${IMAGE_REPO}:${dockerTag}"
                     withDockerRegistry(credentialsId: "${DOCKER_CREDENTIALS_ID}") {
                         sh "docker push ${dockerImage}"
@@ -133,11 +140,11 @@ pipeline {
             }
         }
 
-        // Clean Old Docker Images from Registry
+        // Clean old Docker images from the registry
         stage('Clean Old Docker Images from Registry') {
             steps {
                 script {
-                    def oldTag = "${BUILD_NUMBER.toInteger() - 1}"
+                    def oldTag = "${params.newBuildNumber.toInteger() - 1}"
                     def oldImage = "${IMAGE_REPO}:${oldTag}"
                     withDockerRegistry(credentialsId: "${DOCKER_CREDENTIALS_ID}") {
                         sh "docker rmi ${oldImage} || echo 'Previous image ${oldImage} not found.'"
@@ -148,7 +155,6 @@ pipeline {
         }
     }
 
-    // Post-build actions
     post {
         success {
             echo 'Build, Test, and Deployment completed successfully.'
