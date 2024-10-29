@@ -10,8 +10,9 @@ pipeline {
         NEXUS_URL = 'http://193.95.57.13:8081/repository/maven-releases/'
     }
 
+    // Parameters to allow versioning
     parameters {
-        string(name: 'newVersion', defaultValue: '', description: 'The new version to be deployed')
+        string(name: 'newVersion', defaultValue: "${BUILD_NUMBER}", description: 'The new version to be deployed')
     }
 
     stages {
@@ -87,11 +88,18 @@ pipeline {
         stage("Nexus Deploy") {
             steps {
                 script {
-                    if (params.newVersion?.trim()) {
-                        sh "mvn deploy:deploy-file -DgroupId=com.esprit.examen -DartifactId=tpAchatProject -Dversion=${params.newVersion} -DgeneratePom=true -Dpackaging=jar -DrepositoryId=deploymentRepo -Durl=${NEXUS_URL} -Dfile=target/tpAchatProject-${params.newVersion}.jar"
-                        echo "Nexus deployment successful for version ${params.newVersion}."
-                    } else {
-                        error("New version is not set. Cannot deploy to Nexus.")
+                    try {
+                        def version = params.newVersion?.trim() ? params.newVersion : BUILD_NUMBER
+                        if (version) {
+                            sh "mvn deploy:deploy-file -DgroupId=com.esprit.examen -DartifactId=tpAchatProject -Dversion=${version} -DgeneratePom=true -Dpackaging=jar -DrepositoryId=deploymentRepo -Durl=${NEXUS_URL} -Dfile=target/tpAchatProject-${version}.jar"
+                            echo "Nexus deployment successful for version ${version}."
+                        } else {
+                            error("New version is not set. Cannot deploy to Nexus.")
+                        }
+                    } catch (e) {
+                        echo "Nexus deployment failed: ${e.getMessage()}"
+                        currentBuild.result = 'FAILURE'
+                        error("Nexus deploy failed")
                     }
                 }
             }
