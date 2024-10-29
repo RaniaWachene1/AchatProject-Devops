@@ -111,8 +111,13 @@ pipeline {
                 script {
                     def dockerTag = "${env.BUILD_NUMBER}"
                     def dockerImage = "${IMAGE_REPO}:${dockerTag}"
+                    def jarFile = "target/tpAchatProject-${env.BUILD_NUMBER}.jar"
+
+                    // Build Docker image using JAR_FILE argument
                     withDockerRegistry(credentialsId: "${DOCKER_CREDENTIALS_ID}") {
-                        sh "docker build -t ${dockerImage} ."
+                        sh """
+                            docker build --build-arg JAR_FILE=${jarFile} -t ${dockerImage} .
+                        """
                         echo "Docker image ${dockerImage} built and tagged successfully."
                     }
                 }
@@ -125,6 +130,7 @@ pipeline {
                 script {
                     def dockerTag = "${env.BUILD_NUMBER}"
                     def dockerImage = "${IMAGE_REPO}:${dockerTag}"
+
                     withDockerRegistry(credentialsId: "${DOCKER_CREDENTIALS_ID}") {
                         sh "docker push ${dockerImage}"
                         echo "Docker image ${dockerImage} pushed to Docker Hub successfully."
