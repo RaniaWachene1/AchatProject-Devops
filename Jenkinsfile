@@ -54,6 +54,7 @@ pipeline {
             }
         }
 
+        /*
         // SonarQube Analysis
         stage('SonarQube Analysis') {
             steps {
@@ -70,6 +71,7 @@ pipeline {
                 }
             }
         }
+        */
 
         // Package the application
         stage('Maven Package') {
@@ -79,6 +81,7 @@ pipeline {
             }
         }
 
+        /*
         // Deploy to Nexus Repository
         stage('Deploy to Nexus') {
             steps {
@@ -104,28 +107,27 @@ pipeline {
                 }
             }
         }
+        */
 
-// Build and tag Docker image
-stage('Build & Tag Docker Image') {
-    steps {
-        script {
-            def version = "1.0.${env.BUILD_NUMBER}"
-            def jarFile = "target/tpAchatProject-${version}.jar"
-            def dockerTag = "${env.BUILD_NUMBER}"
-            def dockerImage = "${IMAGE_REPO}:${dockerTag}"
+        // Build and tag Docker image
+        stage('Build & Tag Docker Image') {
+            steps {
+                script {
+                    def version = "1.0.${env.BUILD_NUMBER}"
+                    def jarFile = "target/tpAchatProject-${version}.jar"
+                    def dockerTag = "${env.BUILD_NUMBER}"
+                    def dockerImage = "${IMAGE_REPO}:${dockerTag}"
 
-            // Build Docker image using JAR_FILE argument
-            withDockerRegistry(credentialsId: "${DOCKER_CREDENTIALS_ID}") {
-                sh """
-                    docker build --build-arg JAR_FILE=${jarFile} -t ${dockerImage} .
-                """
-                echo "Docker image ${dockerImage} built and tagged successfully."
+                    // Build Docker image using JAR_FILE argument
+                    withDockerRegistry(credentialsId: "${DOCKER_CREDENTIALS_ID}") {
+                        sh """
+                            docker build --build-arg JAR_FILE=${jarFile} -t ${dockerImage} .
+                        """
+                        echo "Docker image ${dockerImage} built and tagged successfully."
+                    }
+                }
             }
         }
-    }
-}
-
-
 
         // Push Docker image to Docker Hub
         stage('Push Docker Image') {
@@ -154,18 +156,15 @@ stage('Build & Tag Docker Image') {
                     }
                 }
             }
-
-
         }
 
- stage('Docker Compose ') {
+        // Docker Compose stage
+        stage('Docker Compose') {
             steps {
-
-                    script {
-                        sh 'docker-compose down || true'
-                        sh 'docker-compose up -d'
-                    }
-
+                script {
+                    sh 'docker-compose down || true'
+                    sh 'docker-compose up -d'
+                }
             }
         }
     }
