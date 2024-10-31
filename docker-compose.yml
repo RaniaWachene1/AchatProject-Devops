@@ -15,7 +15,7 @@ services:
   app-tpachat:
     depends_on:
       - mysqlDb
-    image: raniawachene/tpachat:36
+    image: raniawachene/tpachat:40
     restart: on-failure
     ports:
       - 8082:8082
