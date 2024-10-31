@@ -1,4 +1,4 @@
-FROM adoptopenjdk/openjdk11:jdk-11.0.11_9-alpine-slim
+FROM adoptopenjdk/openjdk17:alpine-slim
 
 # Expose the application port
 EXPOSE 8082
