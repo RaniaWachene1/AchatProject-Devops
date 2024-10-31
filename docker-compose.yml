@@ -5,17 +5,17 @@ services:
     image: mysql:5.7
     restart: unless-stopped
     environment:
-      - MYSQL_ROOT_PASSWORD=
+      - MYSQL_ROOT_PASSWORD=root
       - MYSQL_DATABASE=alinfo
     ports:
       - 3306:3306
     volumes:
       - db:/var/lib/mysql
 
-  app-timesheet:
+  app-tpachat:
     depends_on:
       - mysqlDb
-    image: raniawachene/tpachat:34
+    image: raniawachene/tpachat:36
     restart: on-failure
     ports:
       - 8082:8082
