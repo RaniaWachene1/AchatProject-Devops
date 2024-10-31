@@ -154,6 +154,19 @@ stage('Build & Tag Docker Image') {
                     }
                 }
             }
+
+
+        }
+
+ stage('Docker Compose ') {
+            steps {
+
+                    script {
+                        sh 'docker-compose down || true'
+                        sh 'docker-compose up -d'
+                    }
+                
+            }
         }
     }
 
