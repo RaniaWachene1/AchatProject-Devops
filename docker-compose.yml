@@ -15,13 +15,13 @@ services:
   app-tpachat:
     depends_on:
       - mysqlDb
-    image: raniawachene/tpachat:45
+    image: raniawachene/tpachat:46
     restart: on-failure
     ports:
       - 8082:8082
     environment:
       SPRING_APPLICATION_JSON: '{
-        "spring.datasource.url" : "jdbc:mysql://mysqlDb:3306/alinfo?createDatabaseIfNotExist=true",
+        "spring.datasource.url" : "jdbc:mysql://mysqlDb:3306/alinfo?createDatabaseIfNotExist=true&useSSL=false",
         "spring.datasource.username" : "root",
         "spring.datasource.password" : "root",
         "spring.jpa.properties.hibernate.dialect" : "org.hibernate.dialect.MySQL5InnoDBDialect",
