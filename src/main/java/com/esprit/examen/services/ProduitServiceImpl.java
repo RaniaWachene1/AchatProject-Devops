@@ -21,7 +21,8 @@ public class ProduitServiceImpl implements IProduitService {
 	ProduitRepository produitRepository;
 	@Autowired
 	StockRepository stockRepository;
-	
+	@Autowired
+	CategorieProduitRepository categorieProduitRepository;
 
 	@Override
 	public List<Produit> retrieveAllProduits() {
@@ -32,7 +33,7 @@ public class ProduitServiceImpl implements IProduitService {
 		return produits;
 	}
 
-	//@Transactional
+	@Transactional
 	public Produit addProduit(Produit p) {
 		produitRepository.save(p);
 		return p;
@@ -52,7 +53,6 @@ public class ProduitServiceImpl implements IProduitService {
 
 	@Override
 	public Produit retrieveProduit(Long produitId) {
-		log.debug(null);
 		Produit produit = produitRepository.findById(produitId).orElse(null);
 		log.info("produit :" + produit);
 		return produit;

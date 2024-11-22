@@ -12,12 +12,18 @@ pipeline {
     stages {
 
         // Git Checkout
-        stage("Git Checkout") {
+        stage("Git Checkout back") {
             steps {
                 git branch: 'main', credentialsId: "${GIT_CREDENTIALS_ID}", url: 'https://github.com/RaniaWachene1/AchatProject-Devops.git'
                 echo 'Checkout completed successfully.'
             }
         }
+          stage("Git Checkout front") {
+                    steps {
+                        git branch: 'main', credentialsId: "${GIT_CREDENTIALS_ID}", url: 'https://github.com/RaniaWachene1/AchatProject-Front-Devops.git'
+                        echo 'Checkout completed successfully.'
+                    }
+                }
 
         // Update the version in the pom.xml using the build number automatically
         stage('Update Version') {
@@ -157,7 +163,31 @@ pipeline {
                 }
             }
         }
+       // Frontend - Build & Tag Docker Image
+        stage('Frontend - Build & Tag Docker Image') {
+            steps {
 
+                    script {
+                        withDockerRegistry(credentialsId: 'dockerHub', toolName: 'docker') {
+                            sh "docker build -t raniawachene/achatfront:latest ."
+                        }
+                    }
+
+            }
+        }
+
+        // Frontend - Push Docker Image
+        stage('Frontend - Push Docker Image') {
+            steps {
+
+                    script {
+                        withDockerRegistry(credentialsId: 'dockerHub', toolName: 'docker') {
+                            sh "docker push raniawachene/achatfront:latest"
+                        }
+                    }
+
+            }
+        }
         // Docker Compose stage
         stage('Docker Compose') {
             steps {
