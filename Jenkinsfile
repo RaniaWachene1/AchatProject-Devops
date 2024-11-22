@@ -25,16 +25,7 @@ pipeline {
                     }
                 }
 
-        // Update the version in the pom.xml using the build number automatically
-        stage('Update Version') {
-            steps {
-                script {
-                    def version = "1.0.${env.BUILD_NUMBER}"
-                    sh "mvn versions:set -DnewVersion=${version} -DgenerateBackupPoms=false"
-                    echo "Updated version in pom.xml to ${version}."
-                }
-            }
-        }
+
 
         // Clean the project
         stage('Maven Clean') {
@@ -86,7 +77,15 @@ pipeline {
                 echo 'Package stage completed successfully.'
             }
         }
-
+  stage('Update Version') {
+            steps {
+                script {
+                    def version = "1.0.${env.BUILD_NUMBER}"
+                    sh "mvn versions:set -DnewVersion=${version} -DgenerateBackupPoms=false"
+                    echo "Updated version in pom.xml to ${version}."
+                }
+            }
+        }
         /*
         // Deploy to Nexus Repository
         stage('Deploy to Nexus') {
