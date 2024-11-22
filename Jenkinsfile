@@ -31,7 +31,18 @@ pipeline {
                 echo 'Frontend checkout completed successfully.'
             }
         }
-
+  // Update the version in pom.xml
+        stage('Update Version') {
+            steps {
+                dir('backend') {
+                    script {
+                        def version = "1.0.${env.BUILD_NUMBER}"
+                        sh "mvn versions:set -DnewVersion=${version} -DgenerateBackupPoms=false"
+                        echo "Updated version in pom.xml to ${version}."
+                    }
+                }
+            }
+        }
         // Clean and Build Backend
         stage('Backend - Maven Clean & Package') {
             steps {
