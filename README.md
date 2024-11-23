@@ -7,7 +7,9 @@ This project implements a complete **CI/CD pipeline architecture** for a multi-c
 - 🌐 **Frontend:** Angular application
 
 The pipeline automates **code quality checks**, **builds**, **tests**, and **deployments** with seamless integration of multiple DevOps tools.
-![Uploading architeture (2).png…]()
+![Architecture Diagram](docs/images/architecture-diagram.png)
+![architeture (2)](https://github.com/user-attachments/assets/a4b5013e-9680-4dff-925d-cd033dcbb8f3)
+![Architecture Diagram](https://github.com/user-attachments/assets/a4b5013e-9680-4dff-925d-cd033dcbb8f3)
 
 ---
 
