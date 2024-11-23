@@ -7,6 +7,7 @@ This project implements a complete **CI/CD pipeline architecture** for a multi-c
 - 🌐 **Frontend:** Angular application
 
 The pipeline automates **code quality checks**, **builds**, **tests**, and **deployments** with seamless integration of multiple DevOps tools.
+![Uploading architeture (2).png…]()
 
 ---
 
@@ -99,5 +100,5 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## 🛡️ **Contact**
 If you have any questions, feel free to reach out:
-- 📧 Email: [Your Email](mailto:rania.wachene@esprit.tn)
+- 📧 Email: [Email](mailto:rania.wachene@esprit.tn)
 - 🌐 GitHub: [RaniaWachene1](https://github.com/RaniaWachene1)
