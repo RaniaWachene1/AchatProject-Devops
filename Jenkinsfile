@@ -90,16 +90,8 @@ stage('Build & Tag Docker Image') {
             }
         }
 
-        // Clean and Build Frontend
-        stage('Frontend - NPM Build') {
-            steps {
-                dir('frontend') {
-                    sh 'npm install'
-                    sh 'npm run build --prod'
-                    echo 'Frontend build completed successfully.'
-                }
-            }
-        }
+
+        
 
         // Build & Tag Docker Image for Frontend
         stage('Frontend - Build & Tag Docker Image') {
