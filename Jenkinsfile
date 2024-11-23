@@ -31,6 +31,64 @@ pipeline {
                 echo 'Frontend checkout completed successfully.'
             }
         }
+             // Clean the project
+                stage('Maven Clean') {
+                    steps {
+                       dir('backend') {
+                        sh 'mvn clean'
+                        echo 'Clean stage completed successfully.'
+                    }
+                }
+                  }
+
+                // Compile the project
+                stage("Compile Project") {
+                    steps {
+                    dir('backend') {
+                        sh 'mvn compile'
+                        echo 'Compilation completed successfully.'
+                    }
+                }
+
+                // Run unit tests
+                stage("Run Unit Tests") {
+                    steps {
+                                        dir('backend') {
+
+                        sh 'mvn test'
+                        echo 'Unit tests completed successfully.'
+                    }
+                }
+                }
+
+
+                // SonarQube Analysis
+                stage('SonarQube Analysis') {
+                    steps {
+                        withSonarQubeEnv('SonarQube-Server') {
+                            withCredentials([string(credentialsId: 'sonarqube-cred', variable: 'SONAR_TOKEN')]) {
+                                sh '''
+                                    mvn sonar:sonar \
+                                    -Dsonar.projectKey=tpAchat \
+                                    -Dsonar.host.url=http://193.95.57.13:9000 \
+                                    -Dsonar.login=$SONAR_TOKEN
+                                '''
+                                echo 'SonarQube analysis completed successfully.'
+                            }
+                        }
+                    }
+                }
+
+
+                // Package the application
+                stage('Maven Package') {
+                    steps {
+                    dir('backend') {
+                        sh 'mvn package'
+                        echo 'Package stage completed successfully.'
+                    }
+                     }
+                }
   // Update the version in pom.xml
         stage('Update Version') {
             steps {
@@ -43,12 +101,27 @@ pipeline {
                 }
             }
         }
-        // Clean and Build Backend
-        stage('Backend - Maven Clean & Package') {
+        stage('Deploy to Nexus') {
             steps {
-                dir('backend') {
-                    sh 'mvn clean package'
-                    echo 'Backend clean and package completed successfully.'
+                script {
+                    def newVersion = "1.0.${env.BUILD_NUMBER}"
+
+                    withCredentials([usernamePassword(credentialsId: "${NEXUS_CREDENTIALS_ID}", passwordVariable: 'NEXUS_PASS', usernameVariable: 'NEXUS_USER')]) {
+                        sh """
+                            mvn deploy:deploy-file \
+                            -DgroupId=com.esprit.examen \
+                            -DartifactId=tpAchatProject \
+                            -Dversion=${newVersion} \
+                            -Dpackaging=jar \
+                            -Dfile=target/tpAchatProject-${newVersion}.jar \
+                            -DrepositoryId=deploymentRepo \
+                            -Durl=${NEXUS_URL} \
+                            -DgeneratePom=true \
+                            -Drepository.username=${NEXUS_USER} \
+                            -Drepository.password=${NEXUS_PASS}
+                        """
+                        echo "Deployed version ${newVersion} to Nexus."
+                    }
                 }
             }
         }
