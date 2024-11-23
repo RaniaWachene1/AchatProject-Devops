@@ -106,6 +106,7 @@ pipeline {
         stage('Deploy to Nexus') {
             steps {
                 script {
+                dir('backend') {
                     def newVersion = "1.0.${env.BUILD_NUMBER}"
                     withCredentials([usernamePassword(credentialsId: "${NEXUS_CREDENTIALS_ID}", passwordVariable: 'NEXUS_PASS', usernameVariable: 'NEXUS_USER')]) {
                         sh """
@@ -120,6 +121,7 @@ pipeline {
                         """
                         echo "Deployed version ${newVersion} to Nexus."
                     }
+                     }
                 }
             }
         }
