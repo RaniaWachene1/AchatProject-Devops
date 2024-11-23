@@ -31,65 +31,65 @@ pipeline {
                 echo 'Frontend checkout completed successfully.'
             }
         }
-             // Clean the project
-                stage('Maven Clean') {
-                    steps {
-                       dir('backend') {
-                        sh 'mvn clean'
-                        echo 'Clean stage completed successfully.'
+
+        // Clean the project
+        stage('Maven Clean') {
+            steps {
+                dir('backend') {
+                    sh 'mvn clean'
+                    echo 'Clean stage completed successfully.'
+                }
+            }
+        }
+
+        // Compile the project
+        stage("Compile Project") {
+            steps {
+                dir('backend') {
+                    sh 'mvn compile'
+                    echo 'Compilation completed successfully.'
+                }
+            }
+        }
+
+        // Run unit tests
+        stage("Run Unit Tests") {
+            steps {
+                dir('backend') {
+                    sh 'mvn test'
+                    echo 'Unit tests completed successfully.'
+                }
+            }
+        }
+
+        // SonarQube Analysis
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube-Server') {
+                    withCredentials([string(credentialsId: 'sonarqube-cred', variable: 'SONAR_TOKEN')]) {
+                        sh '''
+                            mvn sonar:sonar \
+                            -Dsonar.projectKey=tpAchat \
+                            -Dsonar.host.url=http://193.95.57.13:9000 \
+                            -Dsonar.login=$SONAR_TOKEN
+                        '''
+                        echo 'SonarQube analysis completed successfully.'
                     }
                 }
-                  }
+            }
+        }
 
-                // Compile the project
-                stage("Compile Project") {
-                    steps {
-                    dir('backend') {
-                        sh 'mvn compile'
-                        echo 'Compilation completed successfully.'
-                    }
+        // Package the application
+        stage('Maven Package') {
+            steps {
+                dir('backend') {
+                    sh 'mvn package'
+                    echo 'Package stage completed successfully.'
                 }
+            }
+        }
 
-                // Run unit tests
-                stage("Run Unit Tests") {
-                    steps {
-                                        dir('backend') {
-
-                        sh 'mvn test'
-                        echo 'Unit tests completed successfully.'
-                    }
-                }
-                }
-
-
-                // SonarQube Analysis
-                stage('SonarQube Analysis') {
-                    steps {
-                        withSonarQubeEnv('SonarQube-Server') {
-                            withCredentials([string(credentialsId: 'sonarqube-cred', variable: 'SONAR_TOKEN')]) {
-                                sh '''
-                                    mvn sonar:sonar \
-                                    -Dsonar.projectKey=tpAchat \
-                                    -Dsonar.host.url=http://193.95.57.13:9000 \
-                                    -Dsonar.login=$SONAR_TOKEN
-                                '''
-                                echo 'SonarQube analysis completed successfully.'
-                            }
-                        }
-                    }
-                }
-
-
-                // Package the application
-                stage('Maven Package') {
-                    steps {
-                    dir('backend') {
-                        sh 'mvn package'
-                        echo 'Package stage completed successfully.'
-                    }
-                     }
-                }
-  // Update the version in pom.xml
+        // Update the version in pom.xml
         stage('Update Version') {
             steps {
                 dir('backend') {
@@ -101,11 +101,12 @@ pipeline {
                 }
             }
         }
+
+        // Deploy to Nexus
         stage('Deploy to Nexus') {
             steps {
                 script {
                     def newVersion = "1.0.${env.BUILD_NUMBER}"
-
                     withCredentials([usernamePassword(credentialsId: "${NEXUS_CREDENTIALS_ID}", passwordVariable: 'NEXUS_PASS', usernameVariable: 'NEXUS_USER')]) {
                         sh """
                             mvn deploy:deploy-file \
@@ -115,10 +116,7 @@ pipeline {
                             -Dpackaging=jar \
                             -Dfile=target/tpAchatProject-${newVersion}.jar \
                             -DrepositoryId=deploymentRepo \
-                            -Durl=${NEXUS_URL} \
-                            -DgeneratePom=true \
-                            -Drepository.username=${NEXUS_USER} \
-                            -Drepository.password=${NEXUS_PASS}
+                            -Durl=${NEXUS_URL}
                         """
                         echo "Deployed version ${newVersion} to Nexus."
                     }
@@ -127,26 +125,21 @@ pipeline {
         }
 
         // Build & Tag Docker Image for Backend
-stage('Build & Tag Docker Image') {
-    steps {
-        dir('backend') {
-            script {
-                def version = "1.0.${env.BUILD_NUMBER}"
-                def jarFile = "target/tpAchatProject-${version}.jar"
-                def dockerImage = "raniawachene/tpachat-backend:${env.BUILD_NUMBER}"
-
-                withDockerRegistry(credentialsId: 'dockerHub') {
-                    sh """
-                        docker build --build-arg JAR_FILE=${jarFile} -t ${dockerImage} .
-                    """
-                    echo "Docker image ${dockerImage} built successfully."
+        stage('Build & Tag Docker Image') {
+            steps {
+                dir('backend') {
+                    script {
+                        def version = "1.0.${env.BUILD_NUMBER}"
+                        def jarFile = "target/tpAchatProject-${version}.jar"
+                        def dockerImage = "${IMAGE_REPO_BACKEND}:${env.BUILD_NUMBER}"
+                        sh """
+                            docker build --build-arg JAR_FILE=${jarFile} -t ${dockerImage} .
+                        """
+                        echo "Docker image ${dockerImage} built successfully."
+                    }
                 }
             }
         }
-    }
-}
-
-
 
         // Push Backend Docker Image
         stage('Backend - Push Docker Image') {
@@ -163,7 +156,7 @@ stage('Build & Tag Docker Image') {
             }
         }
 
-        // Clean and Build Frontend
+        // Frontend NPM Build
         stage('Frontend - NPM Build') {
             steps {
                 dir('frontend') {
@@ -179,10 +172,8 @@ stage('Build & Tag Docker Image') {
                 dir('frontend') {
                     script {
                         def dockerImage = "${IMAGE_REPO_FRONTEND}:latest"
-                        withDockerRegistry(credentialsId: "${DOCKER_CREDENTIALS_ID}") {
-                            sh "docker build -t ${dockerImage} ."
-                            echo "Frontend Docker image ${dockerImage} built and tagged successfully."
-                        }
+                        sh "docker build -t ${dockerImage} ."
+                        echo "Frontend Docker image ${dockerImage} built successfully."
                     }
                 }
             }
@@ -203,14 +194,12 @@ stage('Build & Tag Docker Image') {
             }
         }
 
-        // Docker Compose - Deploy Both Frontend and Backend
+        // Deploy using Docker Compose
         stage('Docker Compose') {
             steps {
-                script {
-                    sh 'docker-compose down || true'
-                    sh 'docker-compose up -d'
-                    echo 'Docker Compose deployment completed successfully.'
-                }
+                sh 'docker-compose down || true'
+                sh 'docker-compose up -d'
+                echo 'Docker Compose deployment completed successfully.'
             }
         }
     }
