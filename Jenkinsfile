@@ -54,22 +54,25 @@ pipeline {
         }
 
         // Build & Tag Docker Image for Backend
-   stage('Build & Tag Docker Image') {
-       steps {
-           script {
-               def version = "1.0.${env.BUILD_NUMBER}"
-               def jarFile = "target/tpAchatProject-${version}.jar"
-               def dockerImage = "raniawachene/tpachat-backend:${env.BUILD_NUMBER}"
+stage('Build & Tag Docker Image') {
+    steps {
+        dir('backend') {
+            script {
+                def version = "1.0.${env.BUILD_NUMBER}"
+                def jarFile = "target/tpAchatProject-${version}.jar"
+                def dockerImage = "raniawachene/tpachat-backend:${env.BUILD_NUMBER}"
 
-               withDockerRegistry(credentialsId: 'dockerHub') {
-                   sh """
-                       docker build --build-arg JAR_FILE=${jarFile} -t ${dockerImage} .
-                   """
-                   echo "Docker image ${dockerImage} built successfully."
-               }
-           }
-       }
-   }
+                withDockerRegistry(credentialsId: 'dockerHub') {
+                    sh """
+                        docker build --build-arg JAR_FILE=${jarFile} -t ${dockerImage} .
+                    """
+                    echo "Docker image ${dockerImage} built successfully."
+                }
+            }
+        }
+    }
+}
+
 
 
         // Push Backend Docker Image
